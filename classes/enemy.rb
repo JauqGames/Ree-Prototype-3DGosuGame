@@ -7,19 +7,21 @@ class Enemy
 		@drawheight = 16
 		@id = id
 		@tileimages = spritemap
+		@window = window
 		@facing = "left"
 		if @id == 0
-			@width = 10
-			@height = 10
+			@width = 8
+			@height = 8
 			@srmin = 0
 			@srmax = 3
 			@health = 2
 			@personality = rand(30..40)
 			@srdead = 8
 			@atk = 1
+			@spriteresetmax = 1
 		elsif @id == 1
-			@width = 10
-			@height = 10
+			@width = 8
+			@height = 8
 			@srmin = 4
 			@srmax = 7
 			@health = 2
@@ -27,9 +29,19 @@ class Enemy
 			@personality = rand(40..50)
 			@srdead = 8
 			@atk = 1
+			@spriteresetmax = 1
+		elsif @id == 2
+			@width = 8
+			@height = 8
+			@srmin = 8
+			@srmax = 10
+			@health = 2
+			@personality = rand(90..110)
+			@srdead = 8
+			@atk = 1
+			@spriteresetmax = @personality
 		end
 		@sprite = @srmin
-		@spriteresetmax = 1
 		@spritereset = @spriteresetmax
 		@color = 0xff_ffffff
 		@stretchlimit = 14
@@ -47,6 +59,8 @@ class Enemy
 		@p = 1000
 		@aalayerx = 0
 		@aalayery = 0
+		@timer = 0
+		@maxtimer = 0
 	end
 	
 	def detectplayer(player, width, height)
@@ -58,6 +72,7 @@ class Enemy
 
 		elsif @health > 0
 			if @id == 0
+				@maxtimer = 270
 				if @xvelocity > 1.5
 					@xvelocity = 1.5
 				elsif @xvelocity < -1.5
@@ -73,6 +88,7 @@ class Enemy
 				if @active == 0
 					@yvelocity = 0
 					@xvelocity = 0
+					@timer = 0
 					if detectplayer(player, 110, 90)
 						@active = 1
 					end
@@ -134,20 +150,46 @@ class Enemy
 					if @y > player.y + player.height
 						if @topcoll == false
 							@yvelocity -= 0.1
+							@timer += 1
 						end
 					elsif @y + @height < player.y
 						if @bottcoll == false
 							@yvelocity += 0.1
+							@timer += 1
 						end
 					elsif @y <= player.y + player.height and @y + @height >= player.y
 						if @yvelocity > 0.1 or @yvelocity < -0.1
 							@yvelocity = @yvelocity / 1.08
+							@timer += 2
 						else
 							@yvelocity = 0
+							@timer += 2
+						end
+					end
+					if @timer >= @maxtimer - (@maxtimer / 10).round and @timer < @maxtimer
+						
+					elsif @timer >= @maxtimer
+						@timer = 0
+						if @facing == "left"
+							temp = -4
+							@xvelocity += 3
+						elsif @facing == "right"
+							temp = 4
+							@xvelocity -= 3
+						end
+						@window.use_proj(@x + (@width / 2), @y + (@height / 2), temp, 0, 0)
+						temp = [0, 1]
+						@id = temp.sample
+						if @id == 1
+							@srmin = 4
+							@srmax = 7
+							@sprite = 4
+							@personality += 10
 						end
 					end
 				end
 			elsif @id == 1
+				@maxtimer = 270
 				if @xvelocity > 1.5
 					@xvelocity = 1.5
 				elsif @xvelocity < -1.5
@@ -163,6 +205,7 @@ class Enemy
 				if @active == 0
 					@yvelocity = 0
 					@xvelocity = 0
+					@timer = 0
 					if detectplayer(player, 110, 90)
 						@active = 1
 					end
@@ -199,18 +242,79 @@ class Enemy
 						if @leftcoll == false
 							@xvelocity -= 0.1
 							@facing = "left"
+							@timer += 1
 						end
 					elsif @x + @width < player.x
 						if @rightcoll == false
 							@xvelocity += 0.1
 							@facing = "right"
+							@timer += 1
 						end
 					elsif @x <= player.x + player.width and @x + @width >= player.x
 						if @xvelocity > 0.1 or @xvelocity < -0.1
 							@xvelocity = @xvelocity / 1.08
+							@timer += 2
 						else
 							@xvelocity = 0
+							@timer += 2
 						end
+					end
+					if @timer >= @maxtimer - (@maxtimer / 10).round and @timer < @maxtimer
+						
+					elsif @timer >= @maxtimer
+						@timer = 0
+						@window.use_proj(@x + (@width / 2), @y + (@height / 2), 0, 3, 0)
+						@yvelocity -= 3
+						temp = [0, 1]
+						@id = temp.sample
+						if @id == 0
+							@personality -= 10
+							@srmin = 0
+							@srmax = 3
+							@sprite = 0
+						end
+					end
+				end
+			elsif @id == 2
+				@maxtimer = 120
+				if @active == 0
+					@yvelocity = 0
+					@xvelocity = 0
+					@timer = 0
+					if detectplayer(player, 110, 90)
+						@active = 1
+					end
+				elsif @active == 1
+					if not detectplayer(player, 110, 90)
+						@active = 0
+						@xvelocity = 0
+						@yvelocity = 0
+					end
+					@x += @xvelocity
+					@y += @yvelocity
+					if @xvelocity < -0.1 or @xvelocity > 0.1
+						@xvelocity /= 1.03
+					else
+						@xvelocity = 0
+					end
+					if @yvelocity < -0.1 or @yvelocity > 0.1
+						@yvelocity /= 1.03
+					else
+						@yvelocity = 0
+					end
+					@timer += 1
+					if @personality - @timer > 0
+						@spriteresetmax = @personality - @timer
+					else
+						@spriteresetmax = 1
+					end
+					if @timer >= @maxtimer - (@maxtimer / 10).round and @timer < @maxtimer
+					elsif @timer == @maxtimer
+						angle = @window.find_angle(@x + (@width / 2), @y + (@height / 2), player.x, player.y)
+						@yvelocity = Math.sin((angle * Math::PI) / 180) * 4
+						@xvelocity = Math.cos((angle * Math::PI) / 180) * 4
+					elsif @timer >= @maxtimer + 40
+						@timer = 0
 					end
 				end
 			end

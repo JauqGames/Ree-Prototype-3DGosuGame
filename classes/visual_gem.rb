@@ -1,6 +1,6 @@
 class VisualGem
-	attr_accessor
-	def initialize(x, y, id = 0, type, sprites)
+	attr_accessor :x, :y, :width, :height, :id
+	def initialize(x, y, id, type, sprites)
 		@x = x * 16
 		@y = y * 16
 		@ax = @x
